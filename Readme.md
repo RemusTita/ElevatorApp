@@ -8,27 +8,7 @@ Smart Selection - Automatically picks the closest available elevator
 Animated Movement - Smooth door and cabin animations
 Live Status - Real-time floor indicators
 Event Logging - SQLite database stores all operations
-Modern UI - Clean, professional design
 
-Quick Start
-Prerequisites
-
-Windows 10 or later
-.NET 8.0 SDK
-Visual Studio 2026 (or VS Code)
-
-Installation
-bash# Clone the repository
-git clone https://github.com/yourusername/ElevatorApp2.git
-
-# Navigate to project
-cd ElevatorApp2
-
-# Restore packages
-dotnet restore
-
-# Run the application
-dotnet run
 ```
 
 ## How to Use
@@ -45,32 +25,7 @@ dotnet run
 - Click **View Database** to see all past events
 
 ## Project Structure
-```
-ElevatorApp2/
-├── States/
-│   ├── IElevatorState.cs
-│   ├── IdleState.cs
-│   ├── MovingState.cs
-│   ├── DoorsOpeningState.cs
-│   ├── DoorsOpenState.cs
-│   └── DoorsClosingState.cs
-├── Observers/
-│   ├── IElevatorObserver.cs
-│   └── IElevatorSubject.cs
-├── Models/
-│   ├── DoorState.cs
-│   └── ElevatorRequest.cs
-├── Data/
-│   └── Database.cs
-├── UI/
-│   ├── Elevator.cs
-│   ├── Elevator.Designer.cs
-│   ├── MainWindow.cs
-│   ├── MainWindow.Designer.cs
-│   ├── ViewDatabase.cs
-│   └── ViewDatabase.Designer.cs
-└── Program.cs
-```
+
 
 ## Design Patterns Used
 
@@ -100,9 +55,9 @@ ID | Elevator   | Event   | Floor  | Time
 
 
 Database file: ElevatorLog.db (created automatically in the application directory)
-Technologies
 
-C# 12 with .NET 8.0
+
+C# 12 with .NET 9.0
 Windows Forms for UI
 SQLite for data storage
 BackgroundWorker for async operations
