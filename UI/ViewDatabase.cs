@@ -22,7 +22,7 @@ namespace ElevatorApp
         {
             try
             {
-                // Get data from memory (already synced to database)
+                // Get data from memory
                 DataTable events = database.GetAllEvents();
                 dataGridView.DataSource = events;
 

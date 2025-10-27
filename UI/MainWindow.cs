@@ -11,7 +11,6 @@ namespace ElevatorApp
         private readonly Queue<ElevatorRequest> requestQueue = new();
 
 
-        // Initialize form and subscribe to elevator events
         public MainWindow()
         {
             InitializeComponent();
@@ -153,7 +152,7 @@ namespace ElevatorApp
             elevator.GoToFloor(floor);
         }
 
-        // Find available elevator, preferring closest one
+        // Find available, closest elevator
         private Elevator? GetAvailableElevator(int floor)
         {
             var aAvailable = !elevatorA.IsBusy;
@@ -173,7 +172,7 @@ namespace ElevatorApp
                    (elevatorB.IsBusy && elevatorB.targetFloor == floor);
         }
 
-        // Add timestamped message to log
+        // Add log to activity box
         private void AddLog(string message)
         {
             if (logBox.InvokeRequired)

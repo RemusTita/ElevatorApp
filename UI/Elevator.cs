@@ -6,16 +6,18 @@ namespace ElevatorApp
 {
     public partial class Elevator : UserControl
     {
-        // Properties
         public string ElevatorName { get; }
         public int CurrentFloor { get; private set; }
         public int targetFloor;
         public bool IsBusy => currentState is not IdleState and not DoorsOpenState;
         private string FloorDisplay => CurrentFloor == 0 ? "G" : "1";
 
+        // Track door open/closed status
+        internal bool doorsOpen = false;
 
 
-        // Door and floor position constants
+
+        // Door and floor position 
         private const int DOOR_CLOSED_LEFT = 0;
         private const int DOOR_CLOSED_RIGHT = 50;
         private const int DOOR_OPEN_LEFT = -50;
@@ -25,7 +27,7 @@ namespace ElevatorApp
         private const int DOOR_ANIMATION_INTERVAL = 20;
         private const int MOVEMENT_STEP_DELAY = 20;
 
-        // State pattern implementation
+        // State pattern 
         private IElevatorState currentState;
 
         // Door animation state
@@ -39,7 +41,6 @@ namespace ElevatorApp
         public event EventHandler<ElevatorStateChangedEventArgs>? StateChanged;
         public event EventHandler? OnMovementComplete;
 
-        // Initialize elevator with starting position and name
         public Elevator(Point location, string elevatorName)
         {
             ElevatorName = elevatorName;
@@ -78,8 +79,6 @@ namespace ElevatorApp
             NotifyStateChanged(currentState.GetStateName());
         }
 
-        // Track door open/closed status
-        internal bool doorsOpen = false;
 
         // Move cabin to specified floor with animation
         internal async Task MoveCabin(int floor)
@@ -108,15 +107,14 @@ namespace ElevatorApp
         internal Task OpenDoorsAsync() => AnimateDoorsAsync(true);
         internal Task CloseDoorsAsync() => AnimateDoorsAsync(false);
 
-        // Notify that movement cycle is complete
+        // Notify that movement is complete
         internal void NotifyMovementComplete()
         {
             OnMovementComplete?.Invoke(this, EventArgs.Empty);
         }
 
         // Get Y coordinate for floor position
-        internal static int GetFloorYPosition(int floor) =>
-            floor == 0 ? GROUND_FLOOR_Y : FIRST_FLOOR_Y;
+        internal static int GetFloorYPosition(int floor) => floor == 0 ? GROUND_FLOOR_Y : FIRST_FLOOR_Y;
 
         // Animate door opening/closing
         private Task AnimateDoorsAsync(bool open)
@@ -149,14 +147,9 @@ namespace ElevatorApp
 
             doorStep++;
 
-            // Calculate door positions
-            int leftX = opening
-                ? DOOR_CLOSED_LEFT - doorStep * STEP_INCREMENT
-                : DOOR_OPEN_LEFT + doorStep * STEP_INCREMENT;
+            int leftX = opening ? DOOR_CLOSED_LEFT - doorStep * STEP_INCREMENT : DOOR_OPEN_LEFT + doorStep * STEP_INCREMENT;
 
-            int rightX = opening
-                ? DOOR_CLOSED_RIGHT + doorStep * STEP_INCREMENT
-                : DOOR_OPEN_RIGHT - doorStep * STEP_INCREMENT;
+            int rightX = opening ? DOOR_CLOSED_RIGHT + doorStep * STEP_INCREMENT : DOOR_OPEN_RIGHT - doorStep * STEP_INCREMENT;
 
             doorLeft.Location = new Point(leftX, 0);
             doorRight.Location = new Point(rightX, 0);
@@ -182,12 +175,6 @@ namespace ElevatorApp
         // Update UI status label with current floor and state
         private void UpdateStatusLabel()
         {
-            if (statusLabel.InvokeRequired)
-            {
-                statusLabel.Invoke(UpdateStatusLabel);
-                return;
-            }
-
             statusLabel.Text = $"Floor: {FloorDisplay}\nStatus: {currentState.GetStateName()}";
         }
 

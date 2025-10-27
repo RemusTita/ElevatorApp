@@ -15,7 +15,7 @@
 
         public void OpenDoors(Elevator elevator)
         {
-            // Already open - ignore
+            System.Diagnostics.Debug.WriteLine($"{elevator.ElevatorName}: Doors are already open");
         }
 
         public async void CloseDoors(Elevator elevator)
