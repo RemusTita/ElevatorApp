@@ -168,19 +168,13 @@ namespace ElevatorApp
         // Check if any elevator is already heading to floor
         private bool IsFloorBeingServiced(int floor)
         {
-            return (elevatorA.IsBusy && elevatorA.targetFloor == floor) ||
-                   (elevatorB.IsBusy && elevatorB.targetFloor == floor);
+            return (elevatorA.IsBusy && elevatorA.TargetFloor == floor) ||
+                   (elevatorB.IsBusy && elevatorB.TargetFloor == floor);
         }
 
         // Add log to activity box
         private void AddLog(string message)
         {
-            if (logBox.InvokeRequired)
-            {
-                logBox.Invoke(() => AddLog(message));
-                return;
-            }
-
             logBox.AppendText($"[{DateTime.Now:HH:mm:ss}] {message}\r\n");
             logBox.SelectionStart = logBox.Text.Length;
             logBox.ScrollToCaret();

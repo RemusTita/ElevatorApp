@@ -8,12 +8,12 @@ namespace ElevatorApp
     {
         public string ElevatorName { get; }
         public int CurrentFloor { get; private set; }
-        public int targetFloor;
+        public int TargetFloor;
         public bool IsBusy => currentState is not IdleState and not DoorsOpenState;
         private string FloorDisplay => CurrentFloor == 0 ? "G" : "1";
 
         // Track door open/closed status
-        internal bool doorsOpen = false;
+        internal bool DoorsOpen = false;
 
 
 
@@ -67,7 +67,7 @@ namespace ElevatorApp
         // Request elevator to go to specified floor
         public void GoToFloor(int floor)
         {
-            targetFloor = floor;
+            TargetFloor = floor;
             currentState.GoToFloor(this, floor);
         }
 
@@ -119,7 +119,7 @@ namespace ElevatorApp
         // Animate door opening/closing
         private Task AnimateDoorsAsync(bool open)
         {
-            if (doorsOpen == open)
+            if (DoorsOpen == open)
                 return Task.CompletedTask;
 
             var tcs = new TaskCompletionSource<bool>();
@@ -131,7 +131,7 @@ namespace ElevatorApp
             opening = open;
             onDoorAnimationComplete = () =>
             {
-                doorsOpen = open;
+                DoorsOpen = open;
                 tcs.SetResult(true);
             };
 
@@ -169,7 +169,7 @@ namespace ElevatorApp
         {
             doorLeft.Location = new Point(DOOR_CLOSED_LEFT, 0);
             doorRight.Location = new Point(DOOR_CLOSED_RIGHT, 0);
-            doorsOpen = false;
+            DoorsOpen = false;
         }
 
         // Update UI status label with current floor and state

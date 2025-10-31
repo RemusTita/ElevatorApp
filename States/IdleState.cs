@@ -11,7 +11,7 @@
             }
 
             // Close doors if open 
-            if (elevator.doorsOpen)
+            if (elevator.DoorsOpen)
             {
                 elevator.SetState(new DoorsClosingState());
                 await elevator.CloseDoorsAsync();
@@ -55,7 +55,7 @@
 
         public async void CloseDoors(Elevator elevator)
         {
-            if (elevator.doorsOpen)
+            if (elevator.DoorsOpen)
             {
                 elevator.SetState(new DoorsClosingState());
                 await elevator.CloseDoorsAsync();
