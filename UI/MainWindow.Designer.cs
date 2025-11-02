@@ -1,4 +1,4 @@
-﻿namespace ElevatorApp
+﻿namespace ElevatorApp.UI
 {
     partial class MainWindow
     {
@@ -79,16 +79,18 @@
             controlPanel.Controls.Add(btnCallFirst);
             controlPanel.Controls.Add(btnViewDB);
             controlPanel.Controls.Add(lblQueueStatus);
-            lblQueueStatus = new Label();
+            controlPanel.Location = new Point(600, 70);
+            controlPanel.Name = "controlPanel";
+            controlPanel.Size = new Size(260, 400);
+            
+            // lblQueueStatus
             lblQueueStatus.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
-            lblQueueStatus.Location = new Point(15, 305);
+            lblQueueStatus.Location = new Point(150, 160);
             lblQueueStatus.Name = "lblQueueStatus";
             lblQueueStatus.Size = new Size(190, 20);
             lblQueueStatus.Text = "Queue: Empty";
             lblQueueStatus.ForeColor = Color.FromArgb(60, 60, 60);
-            controlPanel.Location = new Point(600, 70);
-            controlPanel.Name = "controlPanel";
-            controlPanel.Size = new Size(260, 400);
+            lblQueueStatus.BringToFront();
 
             // lblGroundFloor
             lblGroundFloor.Font = new Font("Segoe UI", 9F, FontStyle.Bold);

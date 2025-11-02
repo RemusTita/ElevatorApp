@@ -1,20 +1,20 @@
-﻿using ElevatorApp.Data;
+﻿using System.ComponentModel;
+using ElevatorApp.Data;
 using ElevatorApp.Events;
 using ElevatorApp.Models;
-using System.ComponentModel;
 
-namespace ElevatorApp
+namespace ElevatorApp.UI
 {
     public partial class MainWindow : Form
     {
-        private readonly Database database;
+        private readonly Database _database;
         private readonly Queue<ElevatorRequest> requestQueue = new();
 
 
         public MainWindow()
         {
             InitializeComponent();
-            database = new Database();
+            _database = new Database();
 
             // Buttons Event Handlers - Clicks Effects
             btnCallGround.MouseEnter += (s, e) => btnCallGround.BackColor = Color.FromArgb(0, 100, 180);
@@ -47,7 +47,7 @@ namespace ElevatorApp
             UpdateFloorIndicators();
             string floorName = e.Floor == 0 ? "Ground" : "First";
             AddLog($"{e.ElevatorName} arrived at {floorName}");
-            database.LogEvent(e.ElevatorName, "Arrived", floorName);
+            _database.LogEvent(e.ElevatorName, "Arrived", floorName);
         }
 
         // Handle elevator state changes
@@ -143,13 +143,13 @@ namespace ElevatorApp
             if (elevator.CurrentFloor == floor)
             {
                 AddLog($"{elevator.ElevatorName} already at {floorName}");
-                elevator.GoToFloor(floor);
+                elevator.MoveToFloor(floor);
                 return;
             }
 
             AddLog($"Dispatching {elevator.ElevatorName} to {floorName}");
-            database.LogEvent(elevator.ElevatorName, "Called", floorName);
-            elevator.GoToFloor(floor);
+            _database.LogEvent(elevator.ElevatorName, "Called", floorName);
+            elevator.MoveToFloor(floor);
         }
 
         // Find available, closest elevator
@@ -193,7 +193,7 @@ namespace ElevatorApp
                 worker.DoWork += (s, args) =>
                 {
                     AddLog("Updating database...");
-                    database.UpdateDatabase();
+                    _database.UpdateDatabase();
                 };
                 worker.RunWorkerCompleted += (s, args) =>
                 {
@@ -203,8 +203,8 @@ namespace ElevatorApp
                             "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                         return;
                     }
-                    AddLog($"Database updated successfully. {database.GetRecordCount()} records.");
-                    new ViewDatabase(database).ShowDialog();
+                    AddLog($"Database updated successfully. {_database.GetRecordCount()} records.");
+                    new ViewDatabase(_database).ShowDialog();
                 };
                 worker.RunWorkerAsync();
             }

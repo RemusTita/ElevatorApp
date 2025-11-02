@@ -1,16 +1,19 @@
-﻿namespace ElevatorApp.States
+﻿using ElevatorApp.UI;
+
+namespace ElevatorApp.States
 {
     public class DoorsOpenState : IElevatorState
     {
-        public async void GoToFloor(Elevator elevator, int floor)
+        public void GoToFloor(Elevator elevator, int floor)
         {
             // Close doors first
             elevator.SetState(new DoorsClosingState());
-            await elevator.CloseDoorsAsync();
-
-            // Return to idle and request movement
-            elevator.SetState(new IdleState());
-            elevator.GoToFloor(floor);
+            elevator.CloseDoors(() =>
+            {
+                // Return to idle and request movement
+                elevator.SetState(new IdleState());
+                elevator.MoveToFloor(floor);
+            });
         }
 
         public void OpenDoors(Elevator elevator)
@@ -18,11 +21,13 @@
             System.Diagnostics.Debug.WriteLine($"{elevator.ElevatorName}: Doors are already open");
         }
 
-        public async void CloseDoors(Elevator elevator)
+        public void CloseDoors(Elevator elevator)
         {
             elevator.SetState(new DoorsClosingState());
-            await elevator.CloseDoorsAsync();
-            elevator.SetState(new IdleState());
+            elevator.CloseDoors(() =>
+            {
+                elevator.SetState(new IdleState());
+            });
         }
 
         public string GetStateName() => "Doors Open";

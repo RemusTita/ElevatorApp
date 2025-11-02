@@ -1,6 +1,6 @@
-﻿namespace ElevatorApp
+﻿namespace ElevatorApp.UI
 {
-    partial class Elevator
+    partial class Elevator : UserControl
     {
         private System.ComponentModel.IContainer components = null;
         private Panel shaft;

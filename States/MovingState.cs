@@ -1,4 +1,6 @@
-﻿namespace ElevatorApp.States
+﻿using ElevatorApp.UI;
+
+namespace ElevatorApp.States
 {
     public class MovingState : IElevatorState
     {

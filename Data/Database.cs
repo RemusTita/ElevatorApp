@@ -5,20 +5,20 @@ namespace ElevatorApp.Data
 {
     public class Database
     {
-        private readonly string dbPath = Path.Combine(
+        private readonly string _dbPath = Path.Combine(
             AppDomain.CurrentDomain.BaseDirectory,
             "ElevatorLog.db"
         );
-        private string ConnectionString => $"Data Source={dbPath};Version=3;";
+        private string ConnectionString => $"Data Source={_dbPath};Version=3;";
 
         // DataTable kept in memory during runtime
-        private DataTable? eventsTable;
+        private DataTable? _eventsTable;
 
         public Database()
         {
-            if (!File.Exists(dbPath))
+            if (!File.Exists(_dbPath))
             {
-                SQLiteConnection.CreateFile(dbPath);
+                SQLiteConnection.CreateFile(_dbPath);
                 CreateTable();
             }
 
@@ -45,16 +45,16 @@ namespace ElevatorApp.Data
         // Initialize in-memory DataTable structure
         private void InitializeDataTable()
         {
-            eventsTable = new DataTable("Events");
-            eventsTable.Columns.Add("ID", typeof(int));
-            eventsTable.Columns.Add("Elevator", typeof(string));
-            eventsTable.Columns.Add("Event", typeof(string));
-            eventsTable.Columns.Add("Floor", typeof(string));
-            eventsTable.Columns.Add("Time", typeof(string));
+            _eventsTable = new DataTable("Events");
+            _eventsTable.Columns.Add("ID", typeof(int));
+            _eventsTable.Columns.Add("Elevator", typeof(string));
+            _eventsTable.Columns.Add("Event", typeof(string));
+            _eventsTable.Columns.Add("Floor", typeof(string));
+            _eventsTable.Columns.Add("Time", typeof(string));
 
-            eventsTable.Columns["ID"]!.AutoIncrement = true;
-            eventsTable.Columns["ID"]!.AutoIncrementSeed = 1;
-            eventsTable.Columns["ID"]!.AutoIncrementStep = 1;
+            _eventsTable.Columns["ID"]!.AutoIncrement = true;
+            _eventsTable.Columns["ID"]!.AutoIncrementSeed = 1;
+            _eventsTable.Columns["ID"]!.AutoIncrementStep = 1;
         }
 
         // Load existing data from database into memory
@@ -63,26 +63,26 @@ namespace ElevatorApp.Data
             using var conn = new SQLiteConnection(ConnectionString);
             conn.Open();
             var adapter = new SQLiteDataAdapter("SELECT * FROM Events", conn);
-            adapter.Fill(eventsTable);
+            adapter.Fill(_eventsTable);
 
             // Set auto-increment seed to next available ID
-            if (eventsTable.Rows.Count > 0)
+            if (_eventsTable.Rows.Count > 0)
             {
-                int maxId = eventsTable.AsEnumerable().Max(row => row.Field<int>("ID"));
-                eventsTable.Columns["ID"]!.AutoIncrementSeed = maxId + 1;
+                int maxId = _eventsTable.AsEnumerable().Max(row => row.Field<int>("ID"));
+                _eventsTable.Columns["ID"]!.AutoIncrementSeed = maxId + 1;
             }
         }
 
         // Log event to in-memory DataTable (not persisted until UpdateDatabase is called)
         public void LogEvent(string elevator, string eventType, string floor)
         {
-            DataRow newRow = eventsTable.NewRow();
+            DataRow newRow = _eventsTable.NewRow();
             newRow["Elevator"] = elevator;
             newRow["Event"] = eventType;
             newRow["Floor"] = floor;
             newRow["Time"] = DateTime.Now.ToString("dd-MM-yyyy HH:mm:ss");
 
-            eventsTable.Rows.Add(newRow);
+            _eventsTable.Rows.Add(newRow);
         }
 
         // Persist in-memory DataTable changes to database
@@ -94,19 +94,19 @@ namespace ElevatorApp.Data
             var adapter = new SQLiteDataAdapter("SELECT * FROM Events", conn);
             var builder = new SQLiteCommandBuilder(adapter);
 
-            adapter.Update(eventsTable);
+            adapter.Update(_eventsTable);
         }
 
         // Get copy of all events from memory
         public DataTable GetAllEvents()
         {
-            return eventsTable.Copy();
+            return _eventsTable.Copy();
         }
 
         // Get total record count from memory
         public int GetRecordCount()
         {
-            return eventsTable.Rows.Count;
+            return _eventsTable.Rows.Count;
         }
     }
 }

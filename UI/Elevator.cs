@@ -2,14 +2,14 @@
 using ElevatorApp.States;
 using Timer = System.Windows.Forms.Timer;
 
-namespace ElevatorApp
+namespace ElevatorApp.UI
 {
-    public partial class Elevator : UserControl
+    public partial class Elevator
     {
         public string ElevatorName { get; }
         public int CurrentFloor { get; private set; }
         public int TargetFloor;
-        public bool IsBusy => currentState is not IdleState and not DoorsOpenState;
+        public bool IsBusy => _currentState is not IdleState and not DoorsOpenState;
         private string FloorDisplay => CurrentFloor == 0 ? "G" : "1";
 
         // Track door open/closed status
@@ -18,23 +18,29 @@ namespace ElevatorApp
 
 
         // Door and floor position 
-        private const int DOOR_CLOSED_LEFT = 0;
-        private const int DOOR_CLOSED_RIGHT = 50;
-        private const int DOOR_OPEN_LEFT = -50;
-        private const int DOOR_OPEN_RIGHT = 100;
-        private const int GROUND_FLOOR_Y = 290;
-        private const int FIRST_FLOOR_Y = 0;
-        private const int DOOR_ANIMATION_INTERVAL = 20;
-        private const int MOVEMENT_STEP_DELAY = 20;
+        private const int DoorClosedLeft = 0;
+        private const int DoorClosedRight = 50;
+        private const int DoorOpenLeft = -50;
+        private const int DoorOpenRight = 100;
+        private const int GroundFloorY = 290;
+        private const int FirstFloorY = 0;
+        private const int DoorAnimationInterval = 20;
+        private const int MovementStepDelay = 20;
 
         // State pattern 
-        private IElevatorState currentState;
+        private IElevatorState _currentState;
 
         // Door animation state
-        private readonly Timer doorTimer;
-        private int doorStep;
-        private bool opening;
-        private Action? onDoorAnimationComplete;
+        private readonly Timer _doorTimer;
+        private int _doorStep;
+        private bool _opening;
+        private Action? _onDoorAnimationComplete;
+
+        // Movement animation state
+        private readonly Timer _movementTimer;
+        private int _targetFloorY;
+        private int _movementStep;
+        private Action? _onMovementComplete;
 
         // Observer pattern - events for state changes
         public event EventHandler<ElevatorMovedEventArgs>? ElevatorMoved;
@@ -47,14 +53,15 @@ namespace ElevatorApp
             InitializeComponent();
             Location = location;
             CurrentFloor = 0;
-            currentState = new IdleState();
+            _currentState = new IdleState();
 
             ResetDoors();
 
-            doorTimer = new Timer { Interval = DOOR_ANIMATION_INTERVAL };
-            doorTimer.Tick += DoorTimer_Tick;
+            _doorTimer = new Timer { Interval = DoorAnimationInterval };
+            _doorTimer.Tick += DoorTimer_Tick;
 
-
+            _movementTimer = new Timer { Interval = MovementStepDelay };
+            _movementTimer.Tick += MovementTimer_Tick;
 
             // Buttons Event Handlers - Clicks Effects
             this.btnGround.MouseEnter += (s, e) => btnGround.BackColor = Color.FromArgb(0, 121, 107);
@@ -65,47 +72,41 @@ namespace ElevatorApp
         }
 
         // Request elevator to go to specified floor
-        public void GoToFloor(int floor)
+        public void MoveToFloor(int floor)
         {
             TargetFloor = floor;
-            currentState.GoToFloor(this, floor);
+            _currentState.GoToFloor(this, floor);
         }
 
         // Change elevator state
         public void SetState(IElevatorState newState)
         {
-            currentState = newState;
+            _currentState = newState;
             UpdateStatusLabel();
-            NotifyStateChanged(currentState.GetStateName());
+            NotifyStateChanged(_currentState.GetStateName());
         }
 
 
         // Move cabin to specified floor with animation
-        internal async Task MoveCabin(int floor)
+        internal void MoveCabin(int floor, Action? onComplete = null)
         {
             int startY = GetFloorYPosition(CurrentFloor);
-            int endY = GetFloorYPosition(floor);
-            int step = startY < endY ? 5 : -5;
-
-            // Animate movement
-            while ((step > 0 && cabin.Location.Y < endY) ||
-                   (step < 0 && cabin.Location.Y > endY))
+            _targetFloorY = GetFloorYPosition(floor);
+            _movementStep = startY < _targetFloorY ? 5 : -5;
+            _onMovementComplete = () =>
             {
-                cabin.Location = new Point(cabin.Location.X, cabin.Location.Y + step);
-                await Task.Delay(MOVEMENT_STEP_DELAY);
-            }
+                CurrentFloor = floor;
+                UpdateStatusLabel();
+                NotifyMoved(CurrentFloor);
+                onComplete?.Invoke();
+            };
 
-            // Set final position
-            cabin.Location = new Point(cabin.Location.X, endY);
-            CurrentFloor = floor;
-
-            UpdateStatusLabel();
-            NotifyMoved(CurrentFloor);
+            _movementTimer.Start();
         }
 
         // Door operations for states
-        internal Task OpenDoorsAsync() => AnimateDoorsAsync(true);
-        internal Task CloseDoorsAsync() => AnimateDoorsAsync(false);
+        internal void OpenDoors(Action? onComplete = null) => AnimateDoors(true, onComplete);
+        internal void CloseDoors(Action? onComplete = null) => AnimateDoors(false, onComplete);
 
         // Notify that movement is complete
         internal void NotifyMovementComplete()
@@ -114,29 +115,29 @@ namespace ElevatorApp
         }
 
         // Get Y coordinate for floor position
-        internal static int GetFloorYPosition(int floor) => floor == 0 ? GROUND_FLOOR_Y : FIRST_FLOOR_Y;
+        internal static int GetFloorYPosition(int floor) => floor == 0 ? GroundFloorY : FirstFloorY;
 
         // Animate door opening/closing
-        private Task AnimateDoorsAsync(bool open)
+        private void AnimateDoors(bool open, Action? onComplete = null)
         {
             if (DoorsOpen == open)
-                return Task.CompletedTask;
-
-            var tcs = new TaskCompletionSource<bool>();
+            {
+                onComplete?.Invoke();
+                return;
+            }
 
             if (open)
                 ResetDoors();
 
-            doorStep = 0;
-            opening = open;
-            onDoorAnimationComplete = () =>
+            _doorStep = 0;
+            _opening = open;
+            _onDoorAnimationComplete = () =>
             {
                 DoorsOpen = open;
-                tcs.SetResult(true);
+                onComplete?.Invoke();
             };
 
-            doorTimer.Start();
-            return tcs.Task;
+            _doorTimer.Start();
         }
 
         // Timer tick handler for door animation
@@ -145,37 +146,57 @@ namespace ElevatorApp
             const int MAX_STEPS = 25;
             const int STEP_INCREMENT = 2;
 
-            doorStep++;
+            _doorStep++;
 
-            int leftX = opening ? DOOR_CLOSED_LEFT - doorStep * STEP_INCREMENT : DOOR_OPEN_LEFT + doorStep * STEP_INCREMENT;
+            int leftX = _opening ? DoorClosedLeft - _doorStep * STEP_INCREMENT : DoorOpenLeft + _doorStep * STEP_INCREMENT;
 
-            int rightX = opening ? DOOR_CLOSED_RIGHT + doorStep * STEP_INCREMENT : DOOR_OPEN_RIGHT - doorStep * STEP_INCREMENT;
+            int rightX = _opening ? DoorClosedRight + _doorStep * STEP_INCREMENT : DoorOpenRight - _doorStep * STEP_INCREMENT;
 
             doorLeft.Location = new Point(leftX, 0);
             doorRight.Location = new Point(rightX, 0);
 
             // Check if animation finished
-            if (doorStep >= MAX_STEPS)
+            if (_doorStep >= MAX_STEPS)
             {
-                doorTimer.Stop();
-                doorLeft.Location = new Point(opening ? DOOR_OPEN_LEFT : DOOR_CLOSED_LEFT, 0);
-                doorRight.Location = new Point(opening ? DOOR_OPEN_RIGHT : DOOR_CLOSED_RIGHT, 0);
-                onDoorAnimationComplete?.Invoke();
+                _doorTimer.Stop();
+                doorLeft.Location = new Point(_opening ? DoorOpenLeft : DoorClosedLeft, 0);
+                doorRight.Location = new Point(_opening ? DoorOpenRight : DoorClosedRight, 0);
+                _onDoorAnimationComplete?.Invoke();
+            }
+        }
+
+        // Timer tick handler for movement animation
+        private void MovementTimer_Tick(object? sender, EventArgs e)
+        {
+            int currentY = cabin.Location.Y;
+
+            // Check if reached target
+            if ((_movementStep > 0 && currentY >= _targetFloorY) ||
+                (_movementStep < 0 && currentY <= _targetFloorY))
+            {
+                _movementTimer.Stop();
+                cabin.Location = new Point(cabin.Location.X, _targetFloorY);
+                _onMovementComplete?.Invoke();
+            }
+            else
+            {
+                // Continue animation
+                cabin.Location = new Point(cabin.Location.X, currentY + _movementStep);
             }
         }
 
         // Reset doors to closed position
         private void ResetDoors()
         {
-            doorLeft.Location = new Point(DOOR_CLOSED_LEFT, 0);
-            doorRight.Location = new Point(DOOR_CLOSED_RIGHT, 0);
+            doorLeft.Location = new Point(DoorClosedLeft, 0);
+            doorRight.Location = new Point(DoorClosedRight, 0);
             DoorsOpen = false;
         }
 
         // Update UI status label with current floor and state
         private void UpdateStatusLabel()
         {
-            statusLabel.Text = $"Floor: {FloorDisplay}\nStatus: {currentState.GetStateName()}";
+            statusLabel.Text = $"Floor: {FloorDisplay}\nStatus: {_currentState.GetStateName()}";
         }
 
         // Notify observers that elevator moved
@@ -191,7 +212,7 @@ namespace ElevatorApp
         }
 
         // Button click handlers
-        private void BtnGround_Click(object sender, EventArgs e) => GoToFloor(0);
-        private void BtnFirst_Click(object sender, EventArgs e) => GoToFloor(1);
+        private void BtnGround_Click(object sender, EventArgs e) => MoveToFloor(0);
+        private void BtnFirst_Click(object sender, EventArgs e) => MoveToFloor(1);
     }
 }

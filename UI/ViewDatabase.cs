@@ -5,12 +5,12 @@ namespace ElevatorApp
 {
     public partial class ViewDatabase : Form
     {
-        private readonly Database database;
+        private readonly Database _database;
 
         public ViewDatabase(Database db)
         {
             InitializeComponent();
-            database = db;
+            _database = db;
             LoadData();
 
             // Buttons Event Handlers - Clicks Effects
@@ -23,7 +23,7 @@ namespace ElevatorApp
             try
             {
                 // Get data from memory
-                DataTable events = database.GetAllEvents();
+                DataTable events = _database.GetAllEvents();
                 dataGridView.DataSource = events;
 
                 if (dataGridView.Columns.Count > 0)
